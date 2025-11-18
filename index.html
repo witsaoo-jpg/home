@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บันทึกการบำรุงรักษาบ้าน</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🛠️ บันทึกการบำรุงรักษาบ้าน</h1>
+
+        <form id="maintenanceForm">
+            <div class="form-group">
+                <label for="item">รายการ:</label>
+                <select id="item" required>
+                    <option value="" disabled selected>--- เลือกรkายการ ---</option>
+                    <option value="แอร์Daikin">แอร์ Daikin</option>
+                    <option value="แอร์Mitsubishi">แอร์ Mitsubishi</option>
+                    <option value="ปั๊มน้ำ">ปั๊มน้ำ</option>
+                    <option value="ระบบไฟ">ระบบไฟ</option>
+                    <option value="ระบบน้ำ">ระบบน้ำ</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="price">ราคา (บาท):</label>
+                <input type="number" id="price" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="technician">ช่าง:</label>
+                <input type="text" id="technician" required>
+            </div>
+            <div class="form-group">
+                <label for="notes">หมายเหตุ:</label>
+                <textarea id="notes"></textarea>
+            </div>
+            <button type="submit">บันทึกรายการ</button>
+        </form>
+
+        <hr>
+
+        <h2>📊 รายงานการบำรุงรักษา</h2>
+        <table id="maintenanceTable">
+            <thead>
+                <tr>
+                    <th>ประทับเวลา</th>
+                    <th>รายการ</th>
+                    <th>ราคา (บาท)</th>
+                    <th>ช่าง</th>
+                    <th>หมายเหตุ</th>
+                    <th>จัดการ</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
