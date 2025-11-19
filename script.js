@@ -1,22 +1,12 @@
-    // ... โค้ดเดิมใน renderTable
-        maintenanceRecords.forEach(record => {
-            // ...
-
-            // คอลัมน์ที่ 1: ประทับเวลา
-            row.insertCell().textContent = record.timestamp; // แสดงค่า timestamp ที่ถูกสร้างขึ้น
-            row.cells[0].setAttribute('data-label', 'ประทับเวลา');
-            
-            // ... โค้ดส่วนที่เหลือ
-        });
-    // ...
-
 document.addEventListener('DOMContentLoaded', () => {
+    // กำหนดตัวแปร DOM Elements
     const form = document.getElementById('maintenanceForm');
     const tableBody = document.querySelector('#maintenanceTable tbody');
-    // ใช้ localStorage เพื่อเก็บข้อมูล (ข้อมูลจะไม่หายไปเมื่อปิด/เปิดเบราว์เซอร์)
+    
+    // โหลดข้อมูลจาก Local Storage หรือใช้ Array ว่างหากไม่มีข้อมูล
     let maintenanceRecords = JSON.parse(localStorage.getItem('maintenanceRecords')) || [];
 
-    // --- ฟังก์ชัน SweetAlert ---
+    // --- 1. ฟังก์ชัน SweetAlert Helpers ---
 
     // แจ้งเตือนสำเร็จ
     const showSuccess = (title, text) => {
@@ -38,54 +28,44 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- ฟังก์ชันการทำงานหลัก ---
+    // --- 2. ฟังก์ชันการจัดการข้อมูล ---
 
-    // 1. เพิ่มรายการใหม่
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
+    // บันทึกข้อมูลลงใน Local Storage
+    const saveRecords = () => {
+        localStorage.setItem('maintenanceRecords', JSON.stringify(maintenanceRecords));
+    };
 
-        const item = document.getElementById('item').value;
-        const price = parseFloat(document.getElementById('price').value);
-        const technician = document.getElementById('technician').value;
-        const notes = document.getElementById('notes').value;
-        const timestamp = new Date().toLocaleString('th-TH');
-        const id = Date.now(); // ใช้ timestamp เป็น unique ID
-
-        if (!item || isNaN(price) || !technician) {
-            showError('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกรายการ, ราคา, และชื่อช่างให้ครบ');
-            return;
-        }
-
-        const newRecord = { id, timestamp, item, price, technician, notes };
-        maintenanceRecords.push(newRecord);
-        saveRecords();
-        renderTable();
-
-        showSuccess('บันทึกสำเร็จ!', 'รายการบำรุงรักษาได้ถูกบันทึกเรียบร้อยแล้ว');
-        form.reset(); // ล้างฟอร์ม
-    });
-
-    // 2. แสดงข้อมูลในตาราง (Render Table)
+    // 3. แสดงข้อมูลในตาราง (Render Table)
     const renderTable = () => {
         tableBody.innerHTML = ''; // ล้างข้อมูลเดิมทั้งหมด
 
+        // ลำดับหัวข้อสำหรับ Responsive Table ในมือถือ
+        const labels = ['ประทับเวลา', 'รายการ', 'ราคา (บาท)', 'ช่าง', 'หมายเหตุ', 'จัดการ'];
+
         maintenanceRecords.forEach(record => {
             const row = tableBody.insertRow();
-            row.dataset.id = record.id; // เก็บ ID ไว้ที่แถวเพื่อใช้อ้างอิง
-
-            // คอลัมน์ที่ 1: ประทับเวลา
-            row.insertCell().textContent = record.timestamp;
-            // คอลัมน์ที่ 2: รายการ
-            row.insertCell().textContent = record.item;
-            // คอลัมน์ที่ 3: ราคา
-            row.insertCell().textContent = record.price.toFixed(2);
-            // คอลัมน์ที่ 4: ช่าง
-            row.insertCell().textContent = record.technician;
-            // คอลัมน์ที่ 5: หมายเหตุ
-            row.insertCell().textContent = record.notes;
+            row.dataset.id = record.id; 
             
+            // ข้อมูลที่ต้องการแสดงผล
+            const data = [
+                record.timestamp,
+                record.item,
+                record.price.toFixed(2),
+                record.technician,
+                record.notes
+            ];
+            
+            // สร้าง Cell ข้อมูล (ยกเว้นคอลัมน์จัดการ)
+            data.forEach((value, index) => {
+                const cell = row.insertCell();
+                cell.textContent = value;
+                // กำหนด data-label สำหรับการแสดงผล Responsive บนมือถือ
+                cell.setAttribute('data-label', labels[index]);
+            });
+
             // คอลัมน์ที่ 6: จัดการ (ปุ่มแก้ไข/ลบ)
             const actionCell = row.insertCell();
+            actionCell.setAttribute('data-label', 'จัดการ'); 
             
             // ปุ่มแก้ไข
             const editBtn = document.createElement('button');
@@ -103,12 +83,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // 3. บันทึกข้อมูลลงใน Local Storage
-    const saveRecords = () => {
-        localStorage.setItem('maintenanceRecords', JSON.stringify(maintenanceRecords));
-    };
+    // 4. ฟังก์ชันสำหรับเพิ่มรายการใหม่
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
 
-    // 4. ฟังก์ชันแก้ไขรายการ (ใช้ SweetAlert2 ในการรับข้อมูล)
+        const item = document.getElementById('item').value;
+        const price = parseFloat(document.getElementById('price').value);
+        const technician = document.getElementById('technician').value;
+        const notes = document.getElementById('notes').value;
+        
+        // สร้างประทับเวลา
+        const timestamp = new Date().toLocaleString('th-TH'); 
+        const id = Date.now(); 
+
+        if (!item || isNaN(price) || !technician) {
+            showError('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกรายการ, ราคา, และชื่อช่างให้ครบ');
+            return;
+        }
+
+        const newRecord = { id, timestamp, item, price, technician, notes };
+        maintenanceRecords.push(newRecord);
+        saveRecords();
+        renderTable();
+
+        showSuccess('บันทึกสำเร็จ!', 'รายการบำรุงรักษาได้ถูกบันทึกแล้ว');
+        form.reset(); 
+    });
+
+    // 5. ฟังก์ชันแก้ไขรายการ (ใช้ SweetAlert2 ในการรับข้อมูล)
     const editRecord = (id) => {
         const recordIndex = maintenanceRecords.findIndex(r => r.id === id);
         const record = maintenanceRecords[recordIndex];
@@ -157,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 maintenanceRecords[recordIndex].price = price;
                 maintenanceRecords[recordIndex].technician = technician;
                 maintenanceRecords[recordIndex].notes = notes;
-                // ไม่อัปเดต timestamp
                 
                 saveRecords();
                 renderTable();
@@ -166,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // 5. ยืนยันการลบรายการ
+    // 6. ยืนยันและลบรายการ
     const confirmDelete = (id) => {
         Swal.fire({
             title: 'แน่ใจหรือไม่?',
@@ -188,6 +189,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // โหลดข้อมูลเมื่อเริ่มต้น
+    // 7. โหลดและแสดงข้อมูลเมื่อหน้าเว็บพร้อมใช้งาน
     renderTable();
 });
