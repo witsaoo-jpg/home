@@ -15,7 +15,7 @@
             <div class="form-group">
                 <label for="item">รายการ:</label>
                 <select id="item" required>
-                    <option value="" disabled selected>--- เลือกรkายการ ---</option>
+                    <option value="" disabled selected>--- เลือกรายการ ---</option>
                     <option value="แอร์Daikin">แอร์ Daikin</option>
                     <option value="แอร์Mitsubishi">แอร์ Mitsubishi</option>
                     <option value="ปั๊มน้ำ">ปั๊มน้ำ</option>
@@ -39,8 +39,36 @@
         </form>
 
         <hr>
+        
+        <h2>📊 รายงานและสรุปค่าใช้จ่าย</h2>
 
-        <h2>📊 รายงานการบำรุงรักษา</h2>
+        <div class="controls-container">
+            <div class="filter-group">
+                <label for="filterItem">กรองตามรายการ:</label>
+                <select id="filterItem">
+                    <option value="all">--- แสดงทั้งหมด ---</option>
+                    <option value="แอร์Daikin">แอร์ Daikin</option>
+                    <option value="แอร์Mitsubishi">แอร์ Mitsubishi</option>
+                    <option value="ปั๊มน้ำ">ปั๊มน้ำ</option>
+                    <option value="ระบบไฟ">ระบบไฟ</option>
+                    <option value="ระบบน้ำ">ระบบน้ำ</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="searchQuery">ค้นหา (ช่าง/หมายเหตุ):</label>
+                <input type="text" id="searchQuery" placeholder="พิมพ์ชื่อช่างหรือคำในหมายเหตุ">
+            </div>
+            <button id="exportCsvBtn">ส่งออกเป็น CSV</button>
+        </div>
+
+        <div id="summary-area">
+            <p><strong>ค่าใช้จ่ายรวมทั้งหมด:</strong> <span id="totalCost">0.00</span> บาท</p>
+            <div id="categorySummary">
+                </div>
+        </div>
+
+        <hr>
+
         <table id="maintenanceTable">
             <thead>
                 <tr>
