@@ -1,3 +1,15 @@
+    // ... โค้ดเดิมใน renderTable
+        maintenanceRecords.forEach(record => {
+            // ...
+
+            // คอลัมน์ที่ 1: ประทับเวลา
+            row.insertCell().textContent = record.timestamp; // แสดงค่า timestamp ที่ถูกสร้างขึ้น
+            row.cells[0].setAttribute('data-label', 'ประทับเวลา');
+            
+            // ... โค้ดส่วนที่เหลือ
+        });
+    // ...
+
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('maintenanceForm');
     const tableBody = document.querySelector('#maintenanceTable tbody');
