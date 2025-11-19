@@ -2,11 +2,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // กำหนดตัวแปร DOM Elements
     const form = document.getElementById('maintenanceForm');
     const tableBody = document.querySelector('#maintenanceTable tbody');
-    const filterItem = document.getElementById('filterItem'); // New: Filter Dropdown
-    const searchQuery = document.getElementById('searchQuery'); // New: Search Input
-    const exportCsvBtn = document.getElementById('exportCsvBtn'); // New: Export Button
-    const totalCostSpan = document.getElementById('totalCost'); // New: Total Cost Display
-    const categorySummaryDiv = document.getElementById('categorySummary'); // New: Category Summary Display
+    const filterItem = document.getElementById('filterItem');
+    const searchQuery = document.getElementById('searchQuery');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const totalCostSpan = document.getElementById('totalCost');
+    const categorySummaryDiv = document.getElementById('categorySummary');
 
     // โหลดข้อมูลจาก Local Storage
     let maintenanceRecords = JSON.parse(localStorage.getItem('maintenanceRecords')) || [];
@@ -23,15 +23,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 2. ฟังก์ชันการจัดการข้อมูล ---
     const saveRecords = () => {
         localStorage.setItem('maintenanceRecords', JSON.stringify(maintenanceRecords));
-        renderSummary(); // New: เรียกใช้ฟังก์ชันสรุปทุกครั้งที่ข้อมูลเปลี่ยน
+        renderSummary(); 
     };
 
-    // 3. NEW: ฟังก์ชันสรุปค่าใช้จ่าย
+    // 3. ฟังก์ชันสรุปค่าใช้จ่าย
     const renderSummary = (records = maintenanceRecords) => {
         let totalCost = 0;
         const categoryTotals = {};
         
-        // คำนวณยอดรวมทั้งหมดและยอดรวมตามหมวดหมู่
         records.forEach(record => {
             const price = parseFloat(record.price) || 0;
             totalCost += price;
@@ -42,10 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
             categoryTotals[record.item] += price;
         });
 
-        // แสดงผลรวมทั้งหมด
         totalCostSpan.textContent = totalCost.toFixed(2).toLocaleString('th-TH');
 
-        // แสดงผลรวมตามหมวดหมู่
         let summaryHtml = '';
         for (const item in categoryTotals) {
             summaryHtml += `
@@ -57,19 +54,17 @@ document.addEventListener('DOMContentLoaded', () => {
         categorySummaryDiv.innerHTML = summaryHtml || '<p>ไม่มีรายการบำรุงรักษา</p>';
     };
     
-    // 4. NEW: ฟังก์ชันการกรองข้อมูล
+    // 4. ฟังก์ชันการกรองข้อมูล
     const filterRecords = () => {
         const selectedItem = filterItem.value;
         const query = searchQuery.value.toLowerCase().trim();
 
         let filtered = maintenanceRecords;
 
-        // กรองตามรายการ (Item)
         if (selectedItem !== 'all') {
             filtered = filtered.filter(record => record.item === selectedItem);
         }
 
-        // กรองตามคำค้นหา (ช่าง หรือ หมายเหตุ)
         if (query) {
             filtered = filtered.filter(record => 
                 record.technician.toLowerCase().includes(query) || 
@@ -77,21 +72,24 @@ document.addEventListener('DOMContentLoaded', () => {
             );
         }
         
-        renderTable(filtered); // แสดงตารางด้วยข้อมูลที่ถูกกรอง
-        renderSummary(filtered); // สรุปค่าใช้จ่ายด้วยข้อมูลที่ถูกกรอง
+        renderTable(filtered); 
+        renderSummary(filtered);
+        return filtered; // ส่งคืนค่าที่ถูกกรองสำหรับการส่งออก CSV
     };
 
-    // 5. NEW: ฟังก์ชันส่งออกเป็น CSV
+    // 5. ฟังก์ชันส่งออกเป็น CSV
     const exportToCsv = () => {
-        const filtered = filterRecords(); // ใช้รายการที่ถูกกรองอยู่
+        const filtered = filterRecords(); 
         if (filtered.length === 0) {
              showError('ไม่สำเร็จ', 'ไม่มีข้อมูลให้ส่งออก');
              return;
         }
 
-        const headers = ["ประทับเวลา", "รายการ", "ราคา", "ช่าง", "หมายเหตุ"];
+        // อัปเดต Headers ให้ตรงกับโครงสร้างใหม่
+        const headers = ["วันที่", "เวลา", "รายการ", "ราคา", "ช่าง", "หมายเหตุ"];
         const rows = filtered.map(record => [
-            `"${record.timestamp.replace(/"/g, '""')}"`, // ใส่ " ครอบเพื่อป้องกันปัญหา comma
+            `"${record.date.replace(/"/g, '""')}"`, // ใช้ record.date
+            `"${record.time.replace(/"/g, '""')}"`, // ใช้ record.time
             `"${record.item.replace(/"/g, '""')}"`,
             record.price,
             `"${record.technician.replace(/"/g, '""')}"`,
@@ -117,15 +115,16 @@ document.addEventListener('DOMContentLoaded', () => {
         showSuccess('ส่งออกสำเร็จ!', 'ดาวน์โหลดไฟล์ CSV เรียบร้อยแล้ว');
     };
     
-    // 6. แสดงข้อมูลในตาราง (Render Table - รับรายการที่ถูกกรองเข้ามา)
+    // 6. แสดงข้อมูลในตาราง (Render Table)
     const renderTable = (records = maintenanceRecords) => {
         tableBody.innerHTML = ''; 
-        const labels = ['ประทับเวลา', 'รายการ', 'ราคา (บาท)', 'ช่าง', 'หมายเหตุ', 'จัดการ'];
+        // อัปเดต labels สำหรับ Responsive Table
+        const labels = ['วันที่', 'เวลา', 'รายการ', 'ราคา (บาท)', 'ช่าง', 'หมายเหตุ', 'จัดการ']; 
 
         if (records.length === 0) {
              const row = tableBody.insertRow();
              const cell = row.insertCell();
-             cell.colSpan = 6;
+             cell.colSpan = 7; // เปลี่ยนเป็น 7 คอลัมน์ (รวม วันที่ และ เวลา)
              cell.textContent = "ไม่มีรายการบำรุงรักษาในขณะนี้ หรือไม่พบข้อมูลตามการกรอง";
              cell.style.textAlign = 'center';
              return;
@@ -135,8 +134,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = tableBody.insertRow();
             row.dataset.id = record.id; 
             
+            // *** การแสดงผล: ใช้ record.date และ record.time ***
             const data = [
-                record.timestamp,
+                record.date || 'N/A', // ใช้ record.date (หรือ 'N/A' ถ้าเป็นข้อมูลเก่าที่ยังไม่มี date field)
+                record.time || 'N/A', // ใช้ record.time (หรือ 'N/A' ถ้าเป็นข้อมูลเก่าที่ยังไม่มี time field)
                 record.item,
                 record.price.toFixed(2),
                 record.technician,
@@ -149,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cell.setAttribute('data-label', labels[index]);
             });
 
-            // คอลัมน์ที่ 6: จัดการ
+            // คอลัมน์ที่ 7: จัดการ
             const actionCell = row.insertCell();
             actionCell.setAttribute('data-label', 'จัดการ'); 
             
@@ -167,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // 7. ฟังก์ชันสำหรับเพิ่มรายการใหม่ (Update: ใช้ filterRecords ในการแสดงผลหลังบันทึก)
+    // 7. ฟังก์ชันสำหรับเพิ่มรายการใหม่ (การสร้าง record object ใหม่)
     form.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -175,7 +176,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const price = parseFloat(document.getElementById('price').value);
         const technician = document.getElementById('technician').value;
         const notes = document.getElementById('notes').value;
-        const timestamp = new Date().toLocaleString('th-TH'); 
+        
+        // *** การบันทึก: แยก Date และ Time ออกจากกัน ***
+        const date = new Date().toLocaleDateString('th-TH'); 
+        // แสดงเวลาเป็น hh:mm:ss
+        const time = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
         const id = Date.now(); 
 
         if (!item || isNaN(price) || !technician) {
@@ -183,22 +188,23 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const newRecord = { id, timestamp, item, price, technician, notes };
+        // โครงสร้างรายการใหม่: ใช้ date และ time
+        const newRecord = { id, date, time, item, price, technician, notes };
         maintenanceRecords.push(newRecord);
         saveRecords();
-        filterRecords(); // เรียก filterRecords แทน renderTable เพื่อคงสถานะการกรอง/ค้นหาเดิมไว้
+        filterRecords(); 
 
         showSuccess('บันทึกสำเร็จ!', 'รายการบำรุงรักษาได้ถูกบันทึกแล้ว');
         form.reset(); 
     });
 
-    // 8. ฟังก์ชันแก้ไขรายการ (ใช้ SweetAlert2 ในการรับข้อมูล - Update: ใช้ filterRecords ในการแสดงผลหลังแก้ไข)
+    // 8. ฟังก์ชันแก้ไขรายการ (ใช้ filterRecords ในการแสดงผลหลังแก้ไข)
     const editRecord = (id) => {
         const recordIndex = maintenanceRecords.findIndex(r => r.id === id);
         const record = maintenanceRecords[recordIndex];
 
         if (!record) return;
-        // ... โค้ด SweetAlert สำหรับแก้ไขรายการ (เหมือนเดิม)
+
         Swal.fire({
             title: `แก้ไขรายการ: ${record.item}`,
             html: `
@@ -242,13 +248,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 maintenanceRecords[recordIndex].notes = notes;
                 
                 saveRecords();
-                filterRecords(); // แสดงผลลัพธ์ที่ถูกกรอง
+                filterRecords(); 
                 showSuccess('แก้ไขสำเร็จ!', 'ข้อมูลได้รับการอัปเดตแล้ว');
             }
         });
     };
 
-    // 9. ยืนยันและลบรายการ (Update: ใช้ filterRecords ในการแสดงผลหลังลบ)
+    // 9. ยืนยันและลบรายการ (ใช้ filterRecords ในการแสดงผลหลังลบ)
     const confirmDelete = (id) => {
         Swal.fire({
             title: 'แน่ใจหรือไม่?',
@@ -263,17 +269,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.isConfirmed) {
                 maintenanceRecords = maintenanceRecords.filter(r => r.id !== id);
                 saveRecords();
-                filterRecords(); // แสดงผลลัพธ์ที่ถูกกรอง
+                filterRecords(); 
                 showSuccess('ลบสำเร็จ!', 'รายการที่เลือกถูกลบเรียบร้อยแล้ว');
             }
         });
     };
 
-    // 10. NEW: Event Listeners สำหรับการค้นหา กรอง และส่งออก
+    // 10. Event Listeners สำหรับการค้นหา กรอง และส่งออก
     filterItem.addEventListener('change', filterRecords);
-    searchQuery.addEventListener('input', filterRecords); // ใช้ 'input' เพื่อให้กรองทันทีที่พิมพ์
+    searchQuery.addEventListener('input', filterRecords); 
     exportCsvBtn.addEventListener('click', exportToCsv);
 
     // 11. โหลดข้อมูลเมื่อเริ่มต้น
-    filterRecords(); // เรียก filterRecords ครั้งแรกเพื่อแสดงข้อมูลทั้งหมดและคำนวณสรุป
+    filterRecords(); 
 });
