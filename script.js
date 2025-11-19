@@ -119,7 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderTable = (records = maintenanceRecords) => {
         tableBody.innerHTML = ''; 
         // อัปเดต labels สำหรับ Responsive Table
-        const labels = ['วันที่', 'เวลา', 'รายการ', 'ราคา (บาท)', 'ช่าง', 'หมายเหตุ', 'จัดการ']; 
+        // ในส่วนของ script.js 
+            const labels = ['ประทับเวลา', 'รายการ', 'ราคา (บาท)', 'ช่าง', 'หมายเหตุ', 'จัดการ'];
 
         if (records.length === 0) {
              const row = tableBody.insertRow();
@@ -135,14 +136,13 @@ document.addEventListener('DOMContentLoaded', () => {
             row.dataset.id = record.id; 
             
             // *** การแสดงผล: ใช้ record.date และ record.time ***
-            const data = [
-                record.date || 'N/A', // ใช้ record.date (หรือ 'N/A' ถ้าเป็นข้อมูลเก่าที่ยังไม่มี date field)
-                record.time || 'N/A', // ใช้ record.time (หรือ 'N/A' ถ้าเป็นข้อมูลเก่าที่ยังไม่มี time field)
-                record.item,
-                record.price.toFixed(2),
-                record.technician,
-                record.notes
-            ];
+           const data = [
+    // รวมวันที่และเวลาในคอลัมน์เดียว
+    `${record.date || 'N/A'} ${record.time || ''}`, 
+    record.item,
+    record.price.toFixed(2),
+    // ... คอลัมน์ที่เหลือ
+];
             
             data.forEach((value, index) => {
                 const cell = row.insertCell();
