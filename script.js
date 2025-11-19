@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalCostSpan = document.getElementById('totalCost');
     const categorySummaryDiv = document.getElementById('categorySummary');
 
-    // *** NEW: ตัวแปรสำหรับ input วันที่และเวลาที่เลือกเอง ***
+    // ตัวแปรสำหรับ input วันที่และเวลาที่เลือกเอง (Service Date/Time)
     const recordDateInput = document.getElementById('recordDate');
     const recordTimeInput = document.getElementById('recordTime');
 
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return dateObj.toLocaleDateString('th-TH');
     };
 
-    // --- 1. ฟังก์ชัน SweetAlert Helpers ---
+    // --- 1. ฟังก์ชัน SweetAlert Helpers (ไม่เปลี่ยนแปลง) ---
     const showSuccess = (title, text) => {
         Swal.fire({ icon: 'success', title: title, text: text, timer: 1500, showConfirmButton: false });
     };
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         Swal.fire({ icon: 'error', title: title, text: text });
     };
 
-    // --- 2. ฟังก์ชันการจัดการข้อมูล ---
+    // --- 2. ฟังก์ชันการจัดการข้อมูล (ไม่เปลี่ยนแปลง) ---
     const saveRecords = () => {
         localStorage.setItem('maintenanceRecords', JSON.stringify(maintenanceRecords));
         renderSummary(); 
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return filtered;
     };
 
-    // 5. ฟังก์ชันส่งออกเป็น CSV (ใช้ record.date และ record.time เดิม)
+    // 5. ฟังก์ชันส่งออกเป็น CSV (*** อัปเดต Headers เพื่อส่งออกข้อมูล Service Date/Time ด้วย ***)
     const exportToCsv = () => {
         const filtered = filterRecords(); 
         if (filtered.length === 0) {
@@ -99,11 +99,18 @@ document.addEventListener('DOMContentLoaded', () => {
              return;
         }
 
-        // Headers
-        const headers = ["วันที่", "เวลา", "รายการ", "ราคา", "ช่าง", "หมายเหตุ"];
+        // Headers: แสดงทั้งวันที่บันทึก (ระบบ) และ วันที่เข้าบริการ (ผู้ใช้กรอก)
+        const headers = [
+            "วันที่บันทึก (ระบบ)", "เวลาบันทึก (ระบบ)", 
+            "วันที่เข้าบริการ (ที่กรอก)", "เวลาเข้าบริการ (ที่กรอก)",
+            "รายการ", "ราคา", "ช่าง", "หมายเหตุ"
+        ];
+        
         const rows = filtered.map(record => [
-            `"${record.date || ''}"`,
-            `"${record.time || ''}"`,
+            `"${record.date || ''}"`, // วันที่บันทึก (ระบบ)
+            `"${record.time || ''}"`, // เวลาบันทึก (ระบบ)
+            `"${record.serviceDate || 'N/A'}"`, // วันที่เข้าบริการ (ที่กรอก)
+            `"${record.serviceTime || 'N/A'}"`, // เวลาเข้าบริการ (ที่กรอก)
             `"${record.item || ''}"`,
             record.price,
             `"${record.technician || ''}"`,
@@ -129,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showSuccess('ส่งออกสำเร็จ!', 'ดาวน์โหลดไฟล์ CSV เรียบร้อยแล้ว');
     };
     
-    // 6. แสดงข้อมูลในตาราง (Render Table - ไม่เปลี่ยนแปลง)
+    // 6. แสดงข้อมูลในตาราง (Render Table - ใช้ record.date และ record.time ซึ่งตอนนี้คือ Submission Time)
     const renderTable = (records = maintenanceRecords) => {
         tableBody.innerHTML = ''; 
         const labels = ['วันที่', 'เวลา', 'รายการ', 'ราคา (บาท)', 'ช่าง', 'หมายเหตุ', 'จัดการ']; 
@@ -147,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = tableBody.insertRow();
             row.dataset.id = record.id; 
             
-            // การแสดงผล: ใช้ record.date และ record.time ที่บันทึกไว้
+            // การแสดงผล: ใช้ record.date และ record.time ซึ่งตอนนี้คือ 'วันที่เราบันทึก'
             const data = [
                 record.date || 'N/A', 
                 record.time || 'N/A', 
@@ -181,33 +188,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // 7. ฟังก์ชันสำหรับเพิ่มรายการใหม่ (*** IMPORTANT: อ่านค่าจาก input วันที่/เวลา ***)
+    // 7. ฟังก์ชันสำหรับเพิ่มรายการใหม่ (*** IMPORTANT: บันทึก Submission Time ใน fields 'date'/'time' ***)
     form.addEventListener('submit', (e) => {
         e.preventDefault();
 
-        // ดึงค่าวันที่และเวลาที่ผู้ใช้เลือก
-        const selectedDateISO = recordDateInput.value; // YYYY-MM-DD
-        const selectedTime = recordTimeInput.value;   // HH:MM
+        // 1. ดึงค่า Service Date/Time (ที่ผู้ใช้กรอก)
+        const serviceDateISO = recordDateInput.value; // YYYY-MM-DD
+        const serviceTime = recordTimeInput.value;   // HH:MM
 
+        // 2. ดึงค่ารายการ
         const item = document.getElementById('item').value;
         const price = parseFloat(document.getElementById('price').value);
         const technician = document.getElementById('technician').value;
         const notes = document.getElementById('notes').value;
-        
-        // *** แปลงวันที่ ISO เป็นรูปแบบไทยสำหรับแสดงผล (DD/MM/YYYY) ***
-        const date = formatDateForDisplay(selectedDateISO);
-        // ใช้เวลาที่เลือกมาโดยตรง
-        const time = selectedTime; 
+
+        // 3. *** สร้าง Submission Date/Time (วันที่เราบันทึก) ***
+        const submissionDate = new Date().toLocaleDateString('th-TH'); // วันที่ระบบ
+        const submissionTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }); // เวลา 24 ชม. ระบบ
         
         const id = Date.now(); 
 
-        if (!selectedDateISO || !selectedTime || !item || isNaN(price) || !technician) {
-            showError('ข้อมูลไม่ครบถ้วน', 'กรุณาเลือกวันที่และเวลา พร้อมทั้งกรอกข้อมูลรายการ, ราคา, และชื่อช่างให้ครบ');
+        if (!serviceDateISO || !serviceTime || !item || isNaN(price) || !technician) {
+            showError('ข้อมูลไม่ครบถ้วน', 'กรุณาเลือกวันที่และเวลาเข้าบริการ พร้อมทั้งกรอกข้อมูลรายการ, ราคา, และชื่อช่างให้ครบ');
             return;
         }
 
-        // โครงสร้างรายการใหม่: ใช้ date และ time ที่เลือกมา
-        const newRecord = { id, date, time, item, price, technician, notes };
+        // แปลง service date สำหรับบันทึกในรูปแบบแสดงผล (DD/MM/YYYY)
+        const serviceDateDisplay = formatDateForDisplay(serviceDateISO);
+        
+        // โครงสร้างรายการใหม่: ใช้ Submission Time สำหรับแสดงผลในตาราง (date/time)
+        const newRecord = { 
+            id, 
+            date: submissionDate,       // วันที่บันทึกจริง (แสดงในตาราง)
+            time: submissionTime,       // เวลาบันทึกจริง (แสดงในตาราง)
+            serviceDate: serviceDateDisplay, // วันที่เข้าบริการ (เก็บไว้)
+            serviceTime: serviceTime,       // เวลาเข้าบริการ (เก็บไว้)
+            item, 
+            price, 
+            technician, 
+            notes 
+        };
         maintenanceRecords.push(newRecord);
         saveRecords();
         filterRecords(); 
@@ -264,6 +284,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 maintenanceRecords[recordIndex].price = price;
                 maintenanceRecords[recordIndex].technician = technician;
                 maintenanceRecords[recordIndex].notes = notes;
+                
+                // ไม่ได้แก้ไขวันที่/เวลาที่บันทึกจริง
                 
                 saveRecords();
                 filterRecords(); 
