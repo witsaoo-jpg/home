@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         renderTable(filtered); 
         renderSummary(filtered);
-        return filtered; // ส่งคืนค่าที่ถูกกรองสำหรับการส่งออก CSV
+        return filtered;
     };
 
     // 5. ฟังก์ชันส่งออกเป็น CSV
@@ -85,15 +85,15 @@ document.addEventListener('DOMContentLoaded', () => {
              return;
         }
 
-        // อัปเดต Headers ให้ตรงกับโครงสร้างใหม่
+        // Headers
         const headers = ["วันที่", "เวลา", "รายการ", "ราคา", "ช่าง", "หมายเหตุ"];
         const rows = filtered.map(record => [
-            `"${record.date.replace(/"/g, '""')}"`, // ใช้ record.date
-            `"${record.time.replace(/"/g, '""')}"`, // ใช้ record.time
-            `"${record.item.replace(/"/g, '""')}"`,
+            `"${record.date || ''}"`,
+            `"${record.time || ''}"`,
+            `"${record.item || ''}"`,
             record.price,
-            `"${record.technician.replace(/"/g, '""')}"`,
-            `"${record.notes.replace(/"/g, '""')}"`
+            `"${record.technician || ''}"`,
+            `"${record.notes || ''}"`
         ]);
 
         const csvContent = [
@@ -118,14 +118,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 6. แสดงข้อมูลในตาราง (Render Table)
     const renderTable = (records = maintenanceRecords) => {
         tableBody.innerHTML = ''; 
-        // อัปเดต labels สำหรับ Responsive Table
-        // ในส่วนของ script.js 
-            const labels = ['ประทับเวลา', 'รายการ', 'ราคา (บาท)', 'ช่าง', 'หมายเหตุ', 'จัดการ'];
+        // labels สำหรับ Responsive Table (ต้องตรงกับ HTML)
+        const labels = ['วันที่', 'เวลา', 'รายการ', 'ราคา (บาท)', 'ช่าง', 'หมายเหตุ', 'จัดการ']; 
 
         if (records.length === 0) {
              const row = tableBody.insertRow();
              const cell = row.insertCell();
-             cell.colSpan = 7; // เปลี่ยนเป็น 7 คอลัมน์ (รวม วันที่ และ เวลา)
+             cell.colSpan = 7; 
              cell.textContent = "ไม่มีรายการบำรุงรักษาในขณะนี้ หรือไม่พบข้อมูลตามการกรอง";
              cell.style.textAlign = 'center';
              return;
@@ -135,19 +134,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = tableBody.insertRow();
             row.dataset.id = record.id; 
             
-            // *** การแสดงผล: ใช้ record.date และ record.time ***
-           const data = [
-    // รวมวันที่และเวลาในคอลัมน์เดียว
-    `${record.date || 'N/A'} ${record.time || ''}`, 
-    record.item,
-    record.price.toFixed(2),
-    // ... คอลัมน์ที่เหลือ
-];
+            // การแสดงผล: ใช้ record.date และ record.time 
+            // ใส่การจัดการข้อมูลเก่าที่อาจมีแค่ record.timestamp เดิม
+            const data = [
+                record.date || 'N/A', 
+                record.time || 'N/A', 
+                record.item,
+                record.price.toFixed(2),
+                record.technician,
+                record.notes
+            ];
             
             data.forEach((value, index) => {
                 const cell = row.insertCell();
                 cell.textContent = value;
-                cell.setAttribute('data-label', labels[index]);
+                // กำหนด data-label สำหรับการแสดงผล Responsive บนมือถือ
+                cell.setAttribute('data-label', labels[index]); 
             });
 
             // คอลัมน์ที่ 7: จัดการ
@@ -177,10 +179,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const technician = document.getElementById('technician').value;
         const notes = document.getElementById('notes').value;
         
-        // *** การบันทึก: แยก Date และ Time ออกจากกัน ***
-        const date = new Date().toLocaleDateString('th-TH'); 
-        // แสดงเวลาเป็น hh:mm:ss
-        const time = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        // *** สร้างและบันทึก วันที่ และ เวลา ที่บันทึกรายการ ***
+        const date = new Date().toLocaleDateString('th-TH'); // วันที่
+        // เวลา (24-hour format)
+        const time = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }); 
         const id = Date.now(); 
 
         if (!item || isNaN(price) || !technician) {
@@ -198,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         form.reset(); 
     });
 
-    // 8. ฟังก์ชันแก้ไขรายการ (ใช้ filterRecords ในการแสดงผลหลังแก้ไข)
+    // 8. ฟังก์ชันแก้ไขรายการ 
     const editRecord = (id) => {
         const recordIndex = maintenanceRecords.findIndex(r => r.id === id);
         const record = maintenanceRecords[recordIndex];
@@ -254,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // 9. ยืนยันและลบรายการ (ใช้ filterRecords ในการแสดงผลหลังลบ)
+    // 9. ยืนยันและลบรายการ 
     const confirmDelete = (id) => {
         Swal.fire({
             title: 'แน่ใจหรือไม่?',
