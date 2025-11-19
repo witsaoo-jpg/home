@@ -1,24 +1,28 @@
+/* === 1. การปรับปรุงพื้นฐานและฟอร์ม === */
 body {
     font-family: Arial, sans-serif;
-    background-color: #f4f7f6;
+    background-color: #f0f2f5;
     color: #333;
-    padding: 20px;
+    padding: 10px;
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
     background-color: #ffffff;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
 
 h1, h2 {
     color: #007bff;
     text-align: center;
+    margin-bottom: 25px;
+    font-size: 1.8em;
 }
 
+/* การจัดรูปแบบ Input และ Select ให้ดูดีขึ้น */
 .form-group {
     margin-bottom: 15px;
 }
@@ -27,32 +31,30 @@ label {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
+    color: #555;
 }
 
 input[type="text"], input[type="number"], select, textarea {
     width: 100%;
     padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box; /* เพื่อให้ padding ไม่ขยายความกว้างของ element */
+    border: 1px solid #ddd;
+    border-radius: 8px; /* ขอบโค้ง */
+    box-sizing: border-box;
 }
 
-button {
+button[type="submit"] {
+    width: 100%;
     background-color: #28a745;
     color: white;
-    padding: 10px 15px;
+    padding: 12px 15px;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s;
+    font-size: 1.1em;
+    font-weight: bold;
 }
 
-button:hover {
-    background-color: #218838;
-}
-
-/* ตาราง */
+/* === 2. รูปแบบตารางพื้นฐาน (สำหรับ Desktop) === */
 #maintenanceTable {
     width: 100%;
     border-collapse: collapse;
@@ -60,26 +62,26 @@ button:hover {
 }
 
 #maintenanceTable th, #maintenanceTable td {
-    border: 1px solid #ddd;
-    padding: 12px;
-    text-align: left;
+    border: 1px solid #eee;
+    padding: 8px 5px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 0.9em;
 }
 
 #maintenanceTable th {
     background-color: #007bff;
     color: white;
-}
-
-#maintenanceTable tr:nth-child(even) {
-    background-color: #f2f2f2;
+    font-weight: bold;
+    white-space: nowrap; /* ป้องกันหัวตารางตัดบรรทัด */
 }
 
 .edit-btn, .delete-btn {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    margin-right: 5px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    margin: 2px;
+    white-space: nowrap;
 }
 
 .edit-btn {
@@ -90,4 +92,59 @@ button:hover {
 .delete-btn {
     background-color: #dc3545;
     color: white;
+}
+
+/* === 3. Responsive Design สำหรับหน้าจอมือถือ (Mobile View) === */
+
+/* เมื่อหน้าจอเล็กกว่า 600px ให้แปลงตารางเป็นรูปแบบการ์ด */
+@media screen and (max-width: 600px) {
+    
+    /* ซ่อนส่วนหัวตารางทั้งหมด (Thead) เพื่อไม่ให้เกิดการตัดคำ */
+    #maintenanceTable thead {
+        display: none;
+    }
+
+    /* ทำให้แถว (Tr) แสดงผลเหมือนบล็อก */
+    #maintenanceTable tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        padding: 10px;
+        background-color: #fff;
+    }
+
+    /* ทำให้ช่องข้อมูล (Td) แสดงผลเหมือนบล็อก และจัดเรียง */
+    #maintenanceTable td {
+        display: block;
+        text-align: right; /* จัดข้อมูลไว้ด้านขวา */
+        border: none;
+        padding: 5px 0;
+        border-bottom: 1px dotted #eee; /* เส้นแบ่งข้อมูล */
+    }
+    
+    /* เพิ่มชื่อหัวข้อ (Label) ก่อนหน้าข้อมูลจริง */
+    #maintenanceTable td:before {
+        content: attr(data-label); /* ดึงค่าจาก data-label ใน JavaScript */
+        float: left;
+        font-weight: bold;
+        color: #007bff;
+        text-align: left;
+    }
+    
+    /* จัดการคอลัมน์สุดท้าย (ปุ่มจัดการ) */
+    #maintenanceTable tr td:last-child {
+        text-align: center;
+        border-bottom: none;
+        padding-top: 10px;
+    }
+
+    /* จัดปุ่มแก้ไข/ลบ ให้แบ่งครึ่งพื้นที่ */
+    .edit-btn, .delete-btn {
+        width: 48%; 
+        display: inline-block;
+        box-sizing: border-box;
+        margin: 2px 1%;
+    }
 }
