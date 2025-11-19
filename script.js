@@ -8,8 +8,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalCostSpan = document.getElementById('totalCost');
     const categorySummaryDiv = document.getElementById('categorySummary');
 
+    // *** NEW: ตัวแปรสำหรับ input วันที่และเวลาที่เลือกเอง ***
+    const recordDateInput = document.getElementById('recordDate');
+    const recordTimeInput = document.getElementById('recordTime');
+
     // โหลดข้อมูลจาก Local Storage
     let maintenanceRecords = JSON.parse(localStorage.getItem('maintenanceRecords')) || [];
+
+    // --- Helper Function: แปลงวันที่ ISO (YYYY-MM-DD) เป็นรูปแบบไทย (DD/MM/YYYY) ---
+    const formatDateForDisplay = (isoDate) => {
+        if (!isoDate) return 'N/A';
+        // สร้าง Date object จาก ISO string และกำหนดให้เป็นต้นวันเพื่อลดปัญหา Timezone
+        const dateObj = new Date(isoDate + 'T00:00:00');
+        if (isNaN(dateObj)) return 'N/A';
+        // แปลงเป็นรูปแบบวันที่ไทย (เช่น 19/11/2568)
+        return dateObj.toLocaleDateString('th-TH');
+    };
 
     // --- 1. ฟังก์ชัน SweetAlert Helpers ---
     const showSuccess = (title, text) => {
@@ -26,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSummary(); 
     };
 
-    // 3. ฟังก์ชันสรุปค่าใช้จ่าย
+    // 3. ฟังก์ชันสรุปค่าใช้จ่าย (ไม่เปลี่ยนแปลง)
     const renderSummary = (records = maintenanceRecords) => {
         let totalCost = 0;
         const categoryTotals = {};
@@ -54,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         categorySummaryDiv.innerHTML = summaryHtml || '<p>ไม่มีรายการบำรุงรักษา</p>';
     };
     
-    // 4. ฟังก์ชันการกรองข้อมูล
+    // 4. ฟังก์ชันการกรองข้อมูล (ไม่เปลี่ยนแปลง)
     const filterRecords = () => {
         const selectedItem = filterItem.value;
         const query = searchQuery.value.toLowerCase().trim();
@@ -77,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return filtered;
     };
 
-    // 5. ฟังก์ชันส่งออกเป็น CSV
+    // 5. ฟังก์ชันส่งออกเป็น CSV (ใช้ record.date และ record.time เดิม)
     const exportToCsv = () => {
         const filtered = filterRecords(); 
         if (filtered.length === 0) {
@@ -115,10 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
         showSuccess('ส่งออกสำเร็จ!', 'ดาวน์โหลดไฟล์ CSV เรียบร้อยแล้ว');
     };
     
-    // 6. แสดงข้อมูลในตาราง (Render Table)
+    // 6. แสดงข้อมูลในตาราง (Render Table - ไม่เปลี่ยนแปลง)
     const renderTable = (records = maintenanceRecords) => {
         tableBody.innerHTML = ''; 
-        // labels สำหรับ Responsive Table (ต้องตรงกับ HTML)
         const labels = ['วันที่', 'เวลา', 'รายการ', 'ราคา (บาท)', 'ช่าง', 'หมายเหตุ', 'จัดการ']; 
 
         if (records.length === 0) {
@@ -134,8 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = tableBody.insertRow();
             row.dataset.id = record.id; 
             
-            // การแสดงผล: ใช้ record.date และ record.time 
-            // ใส่การจัดการข้อมูลเก่าที่อาจมีแค่ record.timestamp เดิม
+            // การแสดงผล: ใช้ record.date และ record.time ที่บันทึกไว้
             const data = [
                 record.date || 'N/A', 
                 record.time || 'N/A', 
@@ -148,7 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
             data.forEach((value, index) => {
                 const cell = row.insertCell();
                 cell.textContent = value;
-                // กำหนด data-label สำหรับการแสดงผล Responsive บนมือถือ
                 cell.setAttribute('data-label', labels[index]); 
             });
 
@@ -170,27 +181,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // 7. ฟังก์ชันสำหรับเพิ่มรายการใหม่ (การสร้าง record object ใหม่)
+    // 7. ฟังก์ชันสำหรับเพิ่มรายการใหม่ (*** IMPORTANT: อ่านค่าจาก input วันที่/เวลา ***)
     form.addEventListener('submit', (e) => {
         e.preventDefault();
+
+        // ดึงค่าวันที่และเวลาที่ผู้ใช้เลือก
+        const selectedDateISO = recordDateInput.value; // YYYY-MM-DD
+        const selectedTime = recordTimeInput.value;   // HH:MM
 
         const item = document.getElementById('item').value;
         const price = parseFloat(document.getElementById('price').value);
         const technician = document.getElementById('technician').value;
         const notes = document.getElementById('notes').value;
         
-        // *** สร้างและบันทึก วันที่ และ เวลา ที่บันทึกรายการ ***
-        const date = new Date().toLocaleDateString('th-TH'); // วันที่
-        // เวลา (24-hour format)
-        const time = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }); 
+        // *** แปลงวันที่ ISO เป็นรูปแบบไทยสำหรับแสดงผล (DD/MM/YYYY) ***
+        const date = formatDateForDisplay(selectedDateISO);
+        // ใช้เวลาที่เลือกมาโดยตรง
+        const time = selectedTime; 
+        
         const id = Date.now(); 
 
-        if (!item || isNaN(price) || !technician) {
-            showError('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกรายการ, ราคา, และชื่อช่างให้ครบ');
+        if (!selectedDateISO || !selectedTime || !item || isNaN(price) || !technician) {
+            showError('ข้อมูลไม่ครบถ้วน', 'กรุณาเลือกวันที่และเวลา พร้อมทั้งกรอกข้อมูลรายการ, ราคา, และชื่อช่างให้ครบ');
             return;
         }
 
-        // โครงสร้างรายการใหม่: ใช้ date และ time
+        // โครงสร้างรายการใหม่: ใช้ date และ time ที่เลือกมา
         const newRecord = { id, date, time, item, price, technician, notes };
         maintenanceRecords.push(newRecord);
         saveRecords();
@@ -200,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
         form.reset(); 
     });
 
-    // 8. ฟังก์ชันแก้ไขรายการ 
+    // 8. ฟังก์ชันแก้ไขรายการ (ไม่เปลี่ยนแปลง)
     const editRecord = (id) => {
         const recordIndex = maintenanceRecords.findIndex(r => r.id === id);
         const record = maintenanceRecords[recordIndex];
@@ -256,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // 9. ยืนยันและลบรายการ 
+    // 9. ยืนยันและลบรายการ (ไม่เปลี่ยนแปลง)
     const confirmDelete = (id) => {
         Swal.fire({
             title: 'แน่ใจหรือไม่?',
